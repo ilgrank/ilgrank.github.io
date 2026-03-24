@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PS7 Bot — Mini App</title>
+
+    <!--
+        Telegram Mini App SDK.
+        IMPORTANT: tg.sendData() ONLY works when this page was opened by the bot
+        via a web_app button (inline keyboard or menu button).
+        Opening the URL directly in a browser will load the SDK but sendData()
+        will throw "WebAppMethodUnsupported" because there is no bot context.
+    -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --bg: var(--tg-theme-bg-color, #ffffff);
+            --text: var(--tg-theme-text-color, #000000);
+            --hint: var(--tg-theme-hint-color, #999999);
+            --link: var(--tg-theme-link-color, #2678b6);
+            --btn: var(--tg-theme-button-color, #2678b6);
+            --btnTxt: var(--tg-theme-button-text-color, #ffffff);
+            --sec: var(--tg-theme-secondary-bg-color, #f0f0f0);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--hint);
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--sec);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            color: var(--hint);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .card-value {
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--hint);
+            margin-bottom: 6px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1.5px solid var(--hint);
+            background: var(--sec);
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.15s;
+            -webkit-appearance: none;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: var(--btn);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .field {
+            margin-bottom: 14px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .row .field {
+            flex: 1;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background: var(--btn);
+            color: var(--btnTxt);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: opacity 0.15s;
+        }
+
+        .btn:active {
+            opacity: 0.75;
+        }
+
+        .btn-secondary {
+            background: var(--sec);
+            color: var(--text);
+            border: 1.5px solid var(--hint);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-size: 0.85rem;
+            color: var(--hint);
+            text-align: center;
+            margin-top: 8px;
+            min-height: 1.2em;
+            padding: 4px;
+        }
+
+        .status.ok {
+            color: #4caf50;
+        }
+
+        .status.err {
+            color: #f44336;
+        }
+
+        .status.warn {
+            color: #ff9800;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 0.85rem;
+            color: #856404;
+            display: none;
+        }
+
+        .bottom-pad {
+            height: 80px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🤖 PS7 Bot — Mini App</h1>
+    <p class="subtitle">Pure PowerShell 7 bot demo.</p>
+
+    <!-- Warning shown when not opened via bot -->
+    <div class="warning-box" id="warningBox">
+        ⚠️ <strong>Not opened via bot.</strong>
+        This page must be opened by tapping the button sent by the bot (or the menu button).
+        <code>sendData()</code> won't work when opened directly in a browser.
+    </div>
+
+    <!-- User info -->
+    <div class="card">
+        <div class="card-label">Logged in as</div>
+        <div class="card-value" id="userName">—</div>
+    </div>
+
+    <!-- Context info -->
+    <div class="card">
+        <div class="card-label">Context</div>
+        <div class="card-value" id="contextInfo">—</div>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+        <div class="card-label">Send data to the bot</div>
+
+        <div class="field">
+            <label for="msgInput">Your message</label>
+            <input type="text" id="msgInput" placeholder="Type something..." maxlength="200">
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label for="colorSelect">Favourite colour</label>
+                <select id="colorSelect">
+                    <option value="red">🔴 Red</option>
+                    <option value="green">🟢 Green</option>
+                    <option value="blue">🔵 Blue</option>
+                    <option value="yellow">🟡 Yellow</option>
+                    <option value="purple">🟣 Purple</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="ratingSelect">Rating</label>
+                <select id="ratingSelect">
+                    <option value="5">⭐⭐⭐⭐⭐</option>
+                    <option value="4">⭐⭐⭐⭐</option>
+                    <option value="3">⭐⭐⭐</option>
+                    <option value="2">⭐⭐</option>
+                    <option value="1">⭐</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="notesInput">Notes (optional)</label>
+            <textarea id="notesInput" placeholder="Any additional notes..."></textarea>
+        </div>
+
+        <button class="btn btn-secondary" onclick="tg.close()">✖ Close</button>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <div class="bottom-pad"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const user = tg.initDataUnsafe?.user;
+
+        // KEY DISTINCTION:
+        // • KeyboardButton launch  → initData is EMPTY, but sendData() WORKS
+        // • Inline/Menu launch     → initData is populated, but sendData() SILENTLY FAILS
+        // • Direct browser         → initData is empty, sendData() THROWS
+        //
+        // We use tg.platform to detect "inside Telegram" vs "regular browser".
+        const hasInitData = !!(tg.initData && tg.initData.length > 0);
+        const insideTG = !!(tg.platform && tg.platform !== 'unknown');
+
+        // Initialise
+        tg.ready();
+        tg.expand();
+
+        // -----------------------------------------------------------------------
+        //  Show appropriate warning depending on launch method
+        // -----------------------------------------------------------------------
+        if (!insideTG) {
+            // Regular browser — nothing will work
+            document.getElementById('warningBox').style.display = 'block';
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('testBtn').disabled = true;
+        } else if (hasInitData) {
+            // Inline button or menu button — user info available but sendData
+            // won't deliver data to the bot. Show info banner.
+            document.getElementById('warningBox').style.display = 'block';
+            document.getElementById('warningBox').innerHTML =
+                'ℹ️ <strong>Opened from menu / inline button.</strong> ' +
+                'User info is available, but <code>sendData()</code> won\'t deliver data from this launch method. ' +
+                'Use the <code>/webapp</code> reply keyboard button instead.';
+            document.getElementById('warningBox').style.background = '#e3f2fd';
+            document.getElementById('warningBox').style.borderColor = '#2196f3';
+            document.getElementById('warningBox').style.color = '#0d47a1';
+        }
+        // else: keyboard button launch — sendData() works, buttons stay enabled ✅
+
+        // -----------------------------------------------------------------------
+        //  User info
+        // -----------------------------------------------------------------------
+        if (user) {
+            const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+            const handle = user.username ? ` (@${user.username})` : '';
+            document.getElementById('userName').textContent = name + handle;
+        } else if (insideTG) {
+            document.getElementById('userName').textContent =
+                'Not available (keyboard launch — user info arrives bot-side)';
+        } else {
+            document.getElementById('userName').textContent = 'Not available (not inside Telegram)';
+        }
+
+        // -----------------------------------------------------------------------
+        //  Context info
+        // -----------------------------------------------------------------------
+        const scheme = tg.colorScheme ?? 'unknown';
+        const version = tg.version ?? 'unknown';
+        const launch = !insideTG ? '❌ browser'
+            : hasInitData ? '🔷 inline/menu (sendData won\'t work)'
+                : '✅ keyboard (sendData ready)';
+        document.getElementById('contextInfo').textContent =
+            `Theme: ${scheme} | SDK: ${version} | Platform: ${tg.platform ?? '?'} | ${launch}`;
+
+        // -----------------------------------------------------------------------
+        //  MainButton — show when inside Telegram
+        // -----------------------------------------------------------------------
+        if (insideTG) {
+            tg.MainButton.setText('📤 Send to Bot');
+            tg.MainButton.show();
+            tg.MainButton.onClick(sendData);
+        }
+
+
+
+        // -----------------------------------------------------------------------
+        //  sendData — sends the full form payload
+        // -----------------------------------------------------------------------
+        function sendData() {
+            const msg = document.getElementById('msgInput').value.trim();
+            if (!msg) {
+                setStatus('Please enter a message first.', 'warn');
+                document.getElementById('msgInput').focus();
+                return;
+            }
+
+            const payload = {
+                message: msg,
+                color: document.getElementById('colorSelect').value,
+                rating: parseInt(document.getElementById('ratingSelect').value),
+                notes: document.getElementById('notesInput').value.trim() || null,
+                user: user ? { id: user.id, first_name: user.first_name, username: user.username ?? null } : null,
+                sentAt: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(payload);
+
+            // sendData has a 4096 byte limit
+            if (json.length > 4096) {
+                setStatus('Payload too large (' + json.length + ' bytes, max 4096). Shorten your message.', 'err');
+                return;
+            }
+
+            setStatus('', '');
+            console.log('sendData payload:', json);
+            tg.MainButton.showProgress();
+
+            try {
+                tg.sendData(json);
+                // From a keyboard button the app auto-closes here
+                setStatus('Sent! App closing...', 'ok');
+            } catch (e) {
+                console.error('sendData error:', e);
+                tg.MainButton.hideProgress();
+                setStatus('sendData failed: ' + e.message + ' (code: ' + (e.code ?? 'n/a') + ')', 'err');
+            }
+        }
+
+        function setStatus(text, cls) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.className = 'status ' + (cls ?? '');
+        }
+    </script>
+</body>
+
+</html>

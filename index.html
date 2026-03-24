@@ -192,6 +192,7 @@
     </div>
 
     <button class="btn" id="sendBtn" onclick="sendData()">📤 Send to Bot</button>
+    <button class="btn btn-secondary" id="testBtn" onclick="sendTest()">🔬 Send Test (minimal)</button>
     <button class="btn btn-secondary" onclick="tg.close()">✖ Close</button>
 
     <div class="status" id="status"></div>
@@ -248,6 +249,19 @@
     }
 
     // -----------------------------------------------------------------------
+    //  Minimal test — bypasses form, sends smallest possible payload
+    // -----------------------------------------------------------------------
+    function sendTest() {
+        setStatus('Trying minimal sendData("test")...', '');
+        try {
+            const result = tg.sendData('test');
+            setStatus('sendData returned: ' + JSON.stringify(result) + ' — app should close.', 'ok');
+        } catch(e) {
+            setStatus('sendData("test") threw: ' + e.message, 'err');
+        }
+    }
+
+    // -----------------------------------------------------------------------
     //  sendData
     // -----------------------------------------------------------------------
     function sendData() {
@@ -280,19 +294,17 @@
             return;
         }
 
-        setStatus('Sending ' + json.length + ' bytes...', '');
+        setStatus('', '');
         console.log('sendData payload:', json);
         document.getElementById('sendBtn').disabled = true;
-        if (hasContext) tg.MainButton.disable();
 
         try {
             tg.sendData(json);
-            // If we reach this line sendData succeeded (app should close momentarily)
+            // Reached only if sendData succeeded — app closes momentarily
             setStatus('Sent! App closing...', 'ok');
         } catch (e) {
             console.error('sendData error:', e);
             document.getElementById('sendBtn').disabled = false;
-            if (hasContext) tg.MainButton.enable();
             setStatus('sendData failed: ' + e.message + ' (code: ' + (e.code ?? 'n/a') + ')', 'err');
         }
     }

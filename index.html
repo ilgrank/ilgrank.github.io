@@ -359,7 +359,7 @@
 
             setStatus('', '');
             console.log('sendData payload:', json);
-            document.getElementById('sendBtn').disabled = true;
+            tg.MainButton.showProgress();
 
             try {
                 tg.sendData(json);
@@ -367,7 +367,7 @@
                 setStatus('Sent! App closing...', 'ok');
             } catch (e) {
                 console.error('sendData error:', e);
-                document.getElementById('sendBtn').disabled = false;
+                tg.MainButton.hideProgress();
                 setStatus('sendData failed: ' + e.message + ' (code: ' + (e.code ?? 'n/a') + ')', 'err');
             }
         }

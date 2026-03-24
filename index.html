@@ -247,8 +247,6 @@
             <textarea id="notesInput" placeholder="Any additional notes..."></textarea>
         </div>
 
-        <button class="btn" id="sendBtn" onclick="sendData()">📤 Send to Bot</button>
-        <button class="btn btn-secondary" id="testBtn" onclick="sendTest()">🔬 Send Test (minimal)</button>
         <button class="btn btn-secondary" onclick="tg.close()">✖ Close</button>
 
         <div class="status" id="status"></div>
@@ -329,20 +327,7 @@
             tg.MainButton.onClick(sendData);
         }
 
-        // -----------------------------------------------------------------------
-        //  Minimal test — bypasses form, sends smallest possible payload
-        // -----------------------------------------------------------------------
-        function sendTest() {
-            setStatus('Trying minimal sendData("test")...', '');
-            try {
-                tg.sendData('test');
-                // From a keyboard button the app auto-closes, so you may
-                // never see this message.
-                setStatus('sendData() called — app should close momentarily.', 'ok');
-            } catch (e) {
-                setStatus('sendData("test") threw: ' + e.message, 'err');
-            }
-        }
+
 
         // -----------------------------------------------------------------------
         //  sendData — sends the full form payload

@@ -254,8 +254,12 @@
     function sendTest() {
         setStatus('Trying minimal sendData("test")...', '');
         try {
-            const result = tg.sendData('test');
-            setStatus('sendData returned: ' + JSON.stringify(result) + ' — app should close.', 'ok');
+            tg.sendData('test');
+            // sendData() returns void — if we reach here without an exception
+            // the call succeeded. The app should close automatically when opened
+            // from a reply keyboard button. If opened from an inline button or
+            // menu button, data is silently dropped by Telegram.
+            setStatus('sendData() called — app should close momentarily.', 'ok');
         } catch(e) {
             setStatus('sendData("test") threw: ' + e.message, 'err');
         }

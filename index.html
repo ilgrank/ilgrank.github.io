@@ -272,17 +272,28 @@
             sentAt  : new Date().toISOString()
         };
 
-        setStatus('Sending...', '');
-        tg.MainButton.showProgress(false); // false = don't hide text
+        const json = JSON.stringify(payload);
+
+        // sendData has a 4096 byte limit
+        if (json.length > 4096) {
+            setStatus('Payload too large (' + json.length + ' bytes, max 4096). Shorten your message.', 'err');
+            return;
+        }
+
+        setStatus('Sending ' + json.length + ' bytes...', '');
+        console.log('sendData payload:', json);
+        document.getElementById('sendBtn').disabled = true;
+        if (hasContext) tg.MainButton.disable();
 
         try {
-            // sendData sends the string to the bot and CLOSES the Mini App.
-            // The bot receives it as msg.web_app_data.data.
-            // If this throws, it means we don't have a valid bot context.
-            tg.sendData(JSON.stringify(payload));
+            tg.sendData(json);
+            // If we reach this line sendData succeeded (app should close momentarily)
+            setStatus('Sent! App closing...', 'ok');
         } catch (e) {
-            tg.MainButton.hideProgress();
-            setStatus('Error: ' + e.message, 'err');
+            console.error('sendData error:', e);
+            document.getElementById('sendBtn').disabled = false;
+            if (hasContext) tg.MainButton.enable();
+            setStatus('sendData failed: ' + e.message + ' (code: ' + (e.code ?? 'n/a') + ')', 'err');
         }
     }
 
